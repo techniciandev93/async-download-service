@@ -10,7 +10,7 @@ logger = logging.getLogger('Logger download service')
 
 
 async def archive(request, delay, photo_path):
-    archive_name = request.match_info.get('archive_hash', 'No_name')
+    archive_name = request.match_info['archive_hash']
     folder_photo_path = os.path.join(photo_path, archive_name)
     if os.path.exists(folder_photo_path):
         return await send_archive_in_parts(folder_photo_path, request, delay=delay)
@@ -27,12 +27,10 @@ async def send_archive_in_parts(directory_path, request, chunk_size=1024 * 100, 
         response.headers['Content-Type'] = 'application/zip'
         response.headers['Content-Disposition'] = f'attachment; filename="archive.zip"'
         await response.prepare(request)
-
-        while True:
+        chunk = True
+        while chunk:
             try:
                 chunk = await process.stdout.read(chunk_size)
-                if not chunk:
-                    break
                 await response.write(chunk)
                 logging.info('Sending archive chunk ...')
                 await asyncio.sleep(delay)
